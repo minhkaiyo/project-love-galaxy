@@ -1343,7 +1343,6 @@ function animate() {
     renderer.render(scene, camera);
 }
 //Xử lý đặc biệt cho mobile devices
-
 imageSprites.forEach((sprite, i) => {
     const userData = sprite.userData;
 
@@ -1412,7 +1411,10 @@ let musicPlayer = {
     volume: 0.5,
     currentFile: null,
     duration: 0,
-    currentTime: 0
+    currentTime: 0,
+    defaultAudio: null,       
+    isDefaultPlaying: false,   
+    hasCustomMusic: false 
 };
 function initSimpleMusicSystem() {
     // Tạo audio element
@@ -1449,6 +1451,216 @@ function initSimpleMusicSystem() {
         console.error('Lỗi phát nhạc:', e);
         alert('Không thể phát file nhạc này. Vui lòng chọn file khác.');
     });
+}
+function initDefaultMusic() {
+    // Tạo audio element cho nhạc mặc định
+    musicPlayer.defaultAudio = new Audio();
+    musicPlayer.defaultAudio.volume = musicPlayer.volume;
+    musicPlayer.defaultAudio.loop = true;
+    
+    // Sử dụng link trực tiếp đến file nhạc (thay vì link trang web)
+    const defaultMusicUrl = 'https://github.com/minhkaiyo/project-love-galaxy/raw/main/N%C6%A1i%20N%C3%A0y%20C%C3%B3%20Anh.mp3';
+    musicPlayer.defaultAudio.src = defaultMusicUrl;
+    
+    // Thêm debug logs
+    console.log('🎵 Đang khởi tạo nhạc mặc định...');
+    console.log('URL:', defaultMusicUrl);
+    
+    musicPlayer.defaultAudio.addEventListener('play', () => {
+        musicPlayer.isDefaultPlaying = true;
+        if (!musicPlayer.hasCustomMusic) {
+            updateMusicButton();
+            updateMusicDisplay();
+        }
+        console.log('✅ Nhạc mặc định đang phát');
+    });
+    
+    musicPlayer.defaultAudio.addEventListener('pause', () => {
+        musicPlayer.isDefaultPlaying = false;
+        if (!musicPlayer.hasCustomMusic) {
+            updateMusicButton();
+        }
+        console.log('⏸️ Nhạc mặc định đã dừng');
+    });
+    
+    musicPlayer.defaultAudio.addEventListener('error', (e) => {
+        console.warn('❌ Không thể load nhạc mặc định:', e);
+        // Thử link backup
+        tryBackupMusic();
+    });
+    
+    musicPlayer.defaultAudio.addEventListener('loadeddata', () => {
+        console.log('✅ Nhạc mặc định đã sẵn sàng');
+    });
+    
+    musicPlayer.defaultAudio.addEventListener('canplay', () => {
+        console.log('✅ Có thể phát nhạc mặc định');
+    });
+    
+    // Tự động phát nhạc mặc định sau 3 giây
+    setTimeout(() => {
+        console.log('🎵 Thử phát nhạc mặc định...');
+        if (!musicPlayer.hasCustomMusic) {
+            playDefaultMusic();
+        }
+    }, 0);
+}
+function tryBackupMusic() {
+    const backupUrls = [
+        'https://github.com/minhkaiyo/project-love-galaxy/raw/main/N%C6%A1i%20N%C3%A0y%20C%C3%B3%20Anh.mp3',
+    ];
+    
+    let currentIndex = 0;
+    
+    function tryNext() {
+        if (currentIndex >= backupUrls.length) {
+            console.warn('❌ Tất cả link nhạc backup đều thất bại');
+            createMusicUploadPrompt();
+            return;
+        }
+        
+        const url = backupUrls[currentIndex];
+        console.log(`🔄 Thử link backup ${currentIndex + 1}:`, url);
+        
+        musicPlayer.defaultAudio.src = url;
+        musicPlayer.defaultAudio.load();
+        
+        musicPlayer.defaultAudio.addEventListener('canplay', () => {
+            console.log('✅ Link backup hoạt động:', url);
+            if (!musicPlayer.hasCustomMusic) {
+                playDefaultMusic();
+            }
+        }, { once: true });
+        
+        musicPlayer.defaultAudio.addEventListener('error', () => {
+            currentIndex++;
+            tryNext();
+        }, { once: true });
+    }
+    
+    tryNext();
+}
+function createMusicUploadPrompt() {
+    // Kiểm tra đã có prompt chưa
+    if (document.getElementById('music-upload-prompt')) return;
+    
+    const prompt = document.createElement('div');
+    prompt.id = 'music-upload-prompt';
+    prompt.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10000;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        text-align: center;
+        max-width: 400px;
+        border: 2px solid rgba(255,255,255,0.2);
+    `;
+    
+    prompt.innerHTML = `
+        <div style="color: white; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 10px 0; color: #ffd700;">🎵 Thiết lập nhạc nền</h3>
+            <p style="margin: 0; font-size: 14px; opacity: 0.9;">
+                Không thể load nhạc mặc định. Bạn có muốn upload file nhạc từ máy tính không?
+            </p>
+        </div>
+        
+        <input type="file" accept="audio/*" id="prompt-file-input" style="
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        ">
+        
+        <div style="display: flex; gap: 10px;">
+            <button id="upload-btn" style="
+                flex: 1;
+                padding: 12px;
+                background: linear-gradient(45deg, #4CAF50, #45a049);
+                border: none;
+                border-radius: 8px;
+                color: white;
+                font-weight: bold;
+                cursor: pointer;
+                font-size: 14px;
+            ">📁 Upload nhạc</button>
+            
+            <button id="skip-btn" style="
+                flex: 1;
+                padding: 12px;
+                background: linear-gradient(45deg, #f44336, #d32f2f);
+                border: none;
+                border-radius: 8px;
+                color: white;
+                font-weight: bold;
+                cursor: pointer;
+                font-size: 14px;
+            ">⏭️ Bỏ qua</button>
+        </div>
+    `;
+    
+    document.body.appendChild(prompt);
+    
+    // Xử lý upload
+    const fileInput = document.getElementById('prompt-file-input');
+    const uploadBtn = document.getElementById('upload-btn');
+    const skipBtn = document.getElementById('skip-btn');
+    
+    uploadBtn.addEventListener('click', () => {
+        const file = fileInput.files[0];
+        if (file) {
+            setupDefaultMusicFromFile(file);
+            prompt.remove();
+        } else {
+            alert('Vui lòng chọn file nhạc trước!');
+        }
+    });
+    
+    skipBtn.addEventListener('click', () => {
+        prompt.remove();
+    });
+    
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) {
+            uploadBtn.style.background = 'linear-gradient(45deg, #2196F3, #1976D2)';
+            uploadBtn.textContent = '🎵 Sử dụng file này';
+        }
+    });
+}
+
+function playDefaultMusic() {
+    console.log('🎵 playDefaultMusic được gọi');
+    console.log('defaultAudio tồn tại:', !!musicPlayer.defaultAudio);
+    console.log('hasCustomMusic:', musicPlayer.hasCustomMusic);
+    
+    if (musicPlayer.defaultAudio && !musicPlayer.hasCustomMusic) {
+        console.log('🎵 Đang thử phát nhạc mặc định...');
+        
+        musicPlayer.defaultAudio.play().then(() => {
+            console.log('✅ Phát nhạc mặc định thành công!');
+        }).catch(error => {
+            console.warn('⚠️ Lỗi autoplay:', error.message);
+            
+            if (error.name === 'NotAllowedError') {
+                console.log('💡 Tạo nút phát thủ công...');
+                createPlayButton();
+            }
+        });
+    }
+}
+function stopDefaultMusic() {
+    if (musicPlayer.defaultAudio) {
+        musicPlayer.defaultAudio.pause();
+        musicPlayer.defaultAudio.currentTime = 0;
+    }
 }
 function setupMusicControlsInPanel() {
 
@@ -1693,6 +1905,10 @@ function loadMusicFile(file) {
         return;
     }
 
+    // THÊM: Dừng nhạc mặc định khi có nhạc thủ công
+    stopDefaultMusic();
+    musicPlayer.hasCustomMusic = true;
+
     // Giải phóng URL cũ nếu có
     if (musicPlayer.audio.src && musicPlayer.audio.src.startsWith('blob:')) {
         URL.revokeObjectURL(musicPlayer.audio.src);
@@ -1715,6 +1931,17 @@ function toggleMusic() {
     if (!musicPlayer.audio) {
         console.error('Audio player chưa được khởi tạo');
         alert('Hệ thống âm thanh chưa sẵn sàng!');
+        return;
+    }
+
+    // THÊM: Xử lý trường hợp không có nhạc thủ công
+    if (!musicPlayer.hasCustomMusic) {
+        // Điều khiển nhạc mặc định
+        if (musicPlayer.isDefaultPlaying) {
+            stopDefaultMusic();
+        } else {
+            playDefaultMusic();
+        }
         return;
     }
 
@@ -1757,18 +1984,28 @@ function setMusicVolume(volume) {
 function updateMusicButton() {
     const musicButton = document.getElementById('toggle-music');
     if (musicButton) {
-        if (musicPlayer.isPlaying) {
-            musicButton.textContent = '⏸️ Tạm dừng';
+        if (musicPlayer.hasCustomMusic) {
+            if (musicPlayer.isPlaying) {
+                musicButton.textContent = '⏸️ Tạm dừng';
+            } else {
+                musicButton.textContent = '🎵 Nhạc nền';
+            }
         } else {
-            musicButton.textContent = '🎵 Nhạc nền';
+            if (musicPlayer.isDefaultPlaying) {
+                musicButton.textContent = '⏸️ Tạm dừng';
+            } else {
+                musicButton.textContent = '🎵 Nhạc nền';
+            }
         }
     }
 }
 function updateMusicDisplay() {
     const display = document.getElementById('music-display');
     if (display) {
-        if (musicPlayer.currentFile) {
+        if (musicPlayer.hasCustomMusic && musicPlayer.currentFile) {
             display.textContent = `🎵 ${musicPlayer.currentFile.name}`;
+        } else if (musicPlayer.isDefaultPlaying) {
+            display.textContent = '🎵 Nhạc nền mặc định';
         } else {
             display.textContent = 'Chưa chọn nhạc';
         }
@@ -1801,6 +2038,7 @@ function formatTime(seconds) {
 }
 function integrateSimpleMusicSystem() {
     initSimpleMusicSystem();
+    initDefaultMusic();  // THÊM DÒNG NÀY
     setupMusicControlsInPanel();
     setInterval(() => {
         if (musicPlayer.isPlaying) {
@@ -1951,7 +2189,7 @@ setTimeout(() => {
 function createHeartShape() {
     const heartShape = new THREE.Shape();
     const x = 0, y = 0;
-    const scale = 1;
+    const scale = 10;
 
     // Vẽ hình trái tim bằng các đường cong Bezier
     heartShape.moveTo(x + 0.5 * scale, y + 0.5 * scale);
@@ -1964,12 +2202,13 @@ function createHeartShape() {
 
     return heartShape;
 }
-function createHeartFramedImage(imageSrc, size = 3, index = 0) {
+function createMultipleHeartFramedImages(imageSrc, baseSize = 3, imageIndex = 0, copies = 30) {
     const loader = new THREE.TextureLoader();
 
     loader.load(
         imageSrc,
         function (texture) {
+            // Tạo canvas và vẽ khung trái tim (giống như code gốc)
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const canvasSize = 512;
@@ -2027,49 +2266,56 @@ function createHeartFramedImage(imageSrc, size = 3, index = 0) {
             ctx.shadowBlur = 10;
             ctx.stroke(heartPath);
 
-            // Tạo texture từ canvas
+            // Tạo texture từ canvas (chỉ tạo 1 lần)
             const heartTexture = new THREE.CanvasTexture(canvas);
 
-            // Tạo sprite với texture trái tim
-            const spriteMaterial = new THREE.SpriteMaterial({
-                map: heartTexture,
-                transparent: true,
-                opacity: 0.95,
-                alphaTest: 0.1
-            });
+            // Tạo nhiều sprite từ cùng một texture
+            for (let i = 0; i < copies; i++) {
+                // Tạo sprite với texture trái tim
+                const spriteMaterial = new THREE.SpriteMaterial({
+                    map: heartTexture.clone(), // Clone texture để mỗi sprite độc lập
+                    transparent: true,
+                    opacity: 0.95,
+                    alphaTest: 0.1
+                });
 
-            const sprite = new THREE.Sprite(spriteMaterial);
+                const sprite = new THREE.Sprite(spriteMaterial);
 
-            const spriteSize = size * 1.5; // Scale từ 1.5 đến 7.5
-            sprite.scale.set(spriteSize, spriteSize, 1);
+                // Tạo size ngẫu nhiên cho mỗi bản sao
+                const randomSizeVariation = 0.5 + Math.random() * 1; // Từ 0.5 đến 1.5
+                const spriteSize = baseSize * randomSizeVariation;
+                sprite.scale.set(spriteSize, spriteSize, 1);
 
-            // Đặt vị trí xung quanh hành tinh
-            const angle = (index * 60 + Math.random() * 30) * (Math.PI / 180); // Góc phân bố
-            const radius = 15 + Math.random() * 10; // Bán kính từ 15-25
-            const height = (Math.random() - 0.5) * 8; // Chiều cao từ -4 đến 4
+                // Đặt vị trí ngẫu nhiên xung quanh thiên hà
+                const angle = (imageIndex * 72 + i * (360 / copies) + Math.random() * 30) * (Math.PI / 180);
+                const radius = 12 + Math.random() * 25; // Bán kính từ 12-37
+                const height = (Math.random() - 0.5) * 15; // Chiều cao từ -7.5 đến 7.5
 
-            sprite.position.set(
-                Math.cos(angle) * radius,
-                height,
-                Math.sin(angle) * radius
-            );
+                sprite.position.set(
+                    Math.cos(angle) * radius,
+                    height,
+                    Math.sin(angle) * radius
+                );
 
-            sprite.userData = {
-                orbitSpeed: 0.003 + Math.random() * 0.007, // Tốc độ quỹ đạo
-                floatSpeed: 1 + Math.random() * 2, // Tốc độ bay lơ lửng
-                orbitRadius: radius,
-                orbitAngle: angle,
-                originalY: height,
-                pulseSpeed: 2 + Math.random() * 3, // Tốc độ nhấp nháy
-                rotationSpeed: (Math.random() - 0.5) * 0.02, // Tốc độ xoay
-                isHeartFramed: true, // Đánh dấu là ảnh khung trái tim
-                size: size
-            };
+                sprite.userData = {
+                    orbitSpeed: 0.002 + Math.random() * 0.008, // Tốc độ quỹ đạo
+                    floatSpeed: 0.8 + Math.random() * 2.2, // Tốc độ bay lơ lửng
+                    orbitRadius: radius,
+                    orbitAngle: angle,
+                    originalY: height,
+                    pulseSpeed: 1.5 + Math.random() * 3.5, // Tốc độ nhấp nháy
+                    rotationSpeed: (Math.random() - 0.5) * 0.03, // Tốc độ xoay
+                    isHeartFramed: true, // Đánh dấu là ảnh khung trái tim
+                    size: spriteSize,
+                    copyIndex: i, // Đánh dấu thứ tự bản sao
+                    imageIndex: imageIndex // Đánh dấu ảnh gốc
+                };
 
-            heartFramedImages.push(sprite);
-            scene.add(sprite);
+                heartFramedImages.push(sprite);
+                scene.add(sprite);
+            }
 
-            console.log(`Đã thêm ảnh khung trái tim số ${heartFramedImages.length}`);
+            console.log(`Đã tạo ${copies} bản sao từ ảnh số ${imageIndex + 1}`);
         },
         function (progress) {
             console.log('Đang tải ảnh:', Math.round(progress.loaded / progress.total * 100) + '%');
@@ -2080,25 +2326,21 @@ function createHeartFramedImage(imageSrc, size = 3, index = 0) {
         }
     );
 }
-
 function createDefaultImages() {
-    // Đường dẫn ảnh trong thư mục dự án - THAY ĐƯỜNG DẪN VÀO ĐÂY
     const localImagePaths = [
-        './images/photo1.jpg',    // Thay bằng tên file ảnh của bạn
-        './images/photo2.png',    // Thay bằng tên file ảnh của bạn
-        './images/photo3.jpg',    // Thay bằng tên file ảnh của bạn
-        './images/photo4.png',    // Thay bằng tên file ảnh của bạn
-        './images/photo5.jpg',    // Thay bằng tên file ảnh của bạn
+        'https://th.bing.com/th/id/R.8625fa7d168ba98dc229c3392683340a?rik=PSjiqd91AMHBKw&riu=http%3a%2f%2f4kwallpapers.com%2fimages%2fwalls%2fthumbs_2t%2f10024.jpg&ehk=YDQEkhfSoLUt%2fWkGv8Pe4RgTsS%2bt1c%2fmZ6mvLhvSvBU%3d&risl=&pid=ImgRaw&r=0'
+        // Cậu có thể thêm nhiều ảnh khác vào đây
     ];
 
-    const imageSizes = [3, 2.5, 3.5, 2.8, 3.2];
+    const imageSizes = [5, 2.5, 3.5, 2.8, 3.2];
+    const copiesPerImage = 30; // Số bản sao cho mỗi ảnh
 
     localImagePaths.forEach((imagePath, index) => {
         const size = imageSizes[index] || 3;
-        createHeartFramedImage(imagePath, size, index);
+        createMultipleHeartFramedImages(imagePath, size, index, copiesPerImage);
     });
 
-    console.log(`Đã tạo ${localImagePaths.length} ảnh khung trái tim từ file cục bộ`);
+    console.log(`Đã tạo ${localImagePaths.length} ảnh gốc, mỗi ảnh có ${copiesPerImage} bản sao`);
 }
 function updateHeartFramedImages(elapsedTime, rotationSpeed) {
     heartFramedImages.forEach((sprite, i) => {
@@ -2110,21 +2352,22 @@ function updateHeartFramedImages(elapsedTime, rotationSpeed) {
         sprite.position.x = orbitX;
         sprite.position.z = orbitZ;
 
-        // Bay lơ lửng lên xuống
+        // Bay lơ lửng lên xuống với variation cho mỗi bản sao
         sprite.position.y = userData.originalY +
-            Math.sin(elapsedTime * userData.floatSpeed + i) * 2;
+            Math.sin(elapsedTime * userData.floatSpeed + userData.copyIndex + userData.imageIndex) * 2;
 
         // Hiệu ứng pulse (thay đổi kích thước nhẹ)
-        const pulse = Math.sin(elapsedTime * userData.pulseSpeed + i) * 0.1 + 1;
-        const baseSize = userData.size * 1.5;
+        const pulse = Math.sin(elapsedTime * userData.pulseSpeed + userData.copyIndex) * 0.1 + 1;
+        const baseSize = userData.size;
         sprite.scale.set(baseSize * pulse, baseSize * pulse, 1);
 
         // Xoay nhẹ
         sprite.rotation.z += userData.rotationSpeed;
 
-        // Hiệu ứng fade in/out nhẹ
-        const fade = Math.sin(elapsedTime * 1.5 + i * 0.5) * 0.1 + 0.9;
-        sprite.material.opacity = fade;
+        // Hiệu ứng fade in/out nhẹ với variation và hiệu ứng phát sáng động
+        const baseFade = Math.sin(elapsedTime * 1.5 + userData.copyIndex * 0.3 + userData.imageIndex) * 0.15 + 0.85;
+        const glowPulse = Math.sin(elapsedTime * 3 + userData.copyIndex * 0.5) * 0.1 + 0.9; // Hiệu ứng nhấp nháy sáng
+        sprite.material.opacity = baseFade * glowPulse;
 
         // Billboard effect - luôn hướng về camera
         sprite.lookAt(camera.position);
@@ -3740,96 +3983,88 @@ function createHeartShape() {
     </svg>`;
 }
 
-// Tạo ảnh mặc định khi khởi động
-function createDefaultHeartImages() {
-    // Danh sách ảnh mặc định (có thể thay thế bằng URL ảnh của bạn)
-    const defaultImages = [
-        'https://picsum.photos/400/300?random=1', // Ảnh ngẫu nhiên 1
-        'https://picsum.photos/400/300?random=2', // Ảnh ngẫu nhiên 2
-        'https://picsum.photos/400/300?random=3', // Ảnh ngẫu nhiên 3
-        'https://picsum.photos/400/300?random=4', // Ảnh ngẫu nhiên 4
-        'https://picsum.photos/400/300?random=5', // Ảnh ngẫu nhiên 5
-        // Hoặc thay bằng URL ảnh cụ thể:
-        // 'https://example.com/image1.jpg',
-        // 'https://example.com/image2.jpg',
-    ];
-
-    // Tạo ảnh với kích thước và vị trí ngẫu nhiên
-    defaultImages.forEach((imageUrl, index) => {
-        setTimeout(() => {
-            const size = 2 + Math.random() * 2; // Kích thước từ 2-4
-            createHeartFramedImage(imageUrl, size, index);
-            console.log(`Đã thêm ảnh mặc định ${index + 1}: ${imageUrl}`);
-        }, index * 1000); // Delay mỗi ảnh 1 giây để tránh lag
-    });
-}
-
-// Tạo âm thanh mặc định
-function createDefaultMusic() {
-    // URL nhạc nền mặc định (có thể thay thế)
-    const defaultMusicUrl = 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav';
-
-    // Tạo audio element với nhạc mặc định
-    if (musicPlayer && musicPlayer.audio) {
-        // Tạo file object giả từ URL
-        fetch(defaultMusicUrl)
-            .then(response => response.blob())
-            .then(blob => {
-                const file = new File([blob], "default-music.mp3", { type: "audio/mpeg" });
-                const url = URL.createObjectURL(blob);
-
-                musicPlayer.audio.src = url;
-                musicPlayer.currentFile = file;
-                updateMusicDisplay();
-
-                console.log('Đã load nhạc mặc định');
-            })
-            .catch(error => {
-                console.log('Không thể load nhạc mặc định:', error);
-                // Fallback: tạo âm thanh im lặng
-                createSilentDefaultMusic();
-            });
-    }
-}
-
-// Tạo âm thanh im lặng làm mặc định (fallback)
-function createSilentDefaultMusic() {
-    // Tạo 5 giây âm thanh im lặng
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const sampleRate = audioContext.sampleRate;
-    const duration = 5; // 5 giây
-    const buffer = audioContext.createBuffer(1, sampleRate * duration, sampleRate);
-
-    // Tạo blob từ silent audio
-    const offlineContext = new OfflineAudioContext(1, sampleRate * duration, sampleRate);
-    const bufferSource = offlineContext.createBufferSource();
-    bufferSource.buffer = buffer;
-    bufferSource.connect(offlineContext.destination);
-    bufferSource.start();
-
-    offlineContext.startRendering().then(renderedBuffer => {
-        // Convert to WAV blob (simplified)
-        const url = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTiAz+zRgzkGHm6v7NeVUwgNUa3d2ZlQCQ1Nl9zqwXEqBSl0xe7cjjAGJm+v7O2eVAkMT6nn7YtXFQlN1dPYqGwfBj2RzOvJfC8EJ3fM6tyPOQcZY7fk35ZMCQ5Mp+3zxnENCS+F0Nq';
-
-        if (musicPlayer && musicPlayer.audio) {
-            musicPlayer.audio.src = url;
-            musicPlayer.currentFile = { name: "Silent Default Track" };
-            updateMusicDisplay();
-            console.log('Đã tạo nhạc im lặng mặc định');
-        }
-    });
-}
-
 function createKeypad(container) {
+    // Container chính để căn giữa
+    const keypadContainer = document.createElement('div');
+    keypadContainer.style.cssText = `
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        margin: 20px 0;
+    `;
+
     const keypadDiv = document.createElement('div');
     keypadDiv.style.cssText = `
         display: grid;
-        grid-template-columns: repeat(3, 80px);
-        grid-gap: 15px;
-        margin-bottom: 30px;
+        grid-template-columns: repeat(3, 90px);
+        grid-template-rows: repeat(4, 90px);
+        gap: 20px;
+        padding: 30px;
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        border-radius: 25px;
+        border: 1px solid rgba(255, 105, 180, 0.3);
+        box-shadow: 
+            0 8px 32px rgba(255, 105, 180, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        position: relative;
+        overflow: hidden;
     `;
 
-    // Layout bàn phím: 1-9, 0, Clear, Enter
+    // Hiệu ứng gradient background động
+    const gradientOverlay = document.createElement('div');
+    gradientOverlay.style.cssText = `
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, 
+            rgba(255, 105, 180, 0.1) 0%, 
+            rgba(255, 20, 147, 0.05) 25%, 
+            transparent 50%, 
+            rgba(255, 105, 180, 0.05) 75%, 
+            rgba(255, 20, 147, 0.1) 100%);
+        animation: rotateGradient 8s linear infinite;
+        pointer-events: none;
+        z-index: -1;
+    `;
+
+    // Thêm CSS animation
+    if (!document.getElementById('keypad-animations')) {
+        const style = document.createElement('style');
+        style.id = 'keypad-animations';
+        style.textContent = `
+            @keyframes rotateGradient {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            @keyframes buttonPress {
+                0% { transform: scale(1); }
+                50% { transform: scale(0.95); }
+                100% { transform: scale(1); }
+            }
+            @keyframes buttonHover {
+                0% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 105, 180, 0.4); }
+                100% { transform: scale(1.05); box-shadow: 0 0 30px rgba(255, 105, 180, 0.7); }
+            }
+            @keyframes pulseGlow {
+                0%, 100% { box-shadow: 0 0 20px rgba(255, 105, 180, 0.5); }
+                50% { box-shadow: 0 0 35px rgba(255, 105, 180, 0.8); }
+            }
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    keypadDiv.appendChild(gradientOverlay);
+
+    // Layout bàn phím chuyên nghiệp: 1-9, *, 0, #
     const keys = [
         { num: '1', pos: 0 }, { num: '2', pos: 1 }, { num: '3', pos: 2 },
         { num: '4', pos: 3 }, { num: '5', pos: 4 }, { num: '6', pos: 5 },
@@ -3837,55 +4072,133 @@ function createKeypad(container) {
         { num: 'clear', pos: 9, special: true }, { num: '0', pos: 10 }, { num: 'enter', pos: 11, special: true }
     ];
 
-    keys.forEach(key => {
+    keys.forEach((key, index) => {
         const button = document.createElement('button');
-        button.className = 'pin-button';
-
+        button.className = 'pin-button-pro';
+        
         const isSpecial = key.special;
-        const isNumber = !isNaN(key.num);
 
         button.style.cssText = `
-            width: 80px;
-            height: 80px;
+            width: 90px;
+            height: 90px;
             border: none;
-            border-radius: 50%;
+            border-radius: 20px;
             cursor: pointer;
-            font-size: 1.8em;
-            font-weight: bold;
-            font-family: 'Comic Sans MS', cursive;
+            font-size: 1.6em;
+            font-weight: 600;
+            font-family: 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             position: relative;
             outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
             ${isSpecial ?
-                `background: linear-gradient(135deg, #ff1493, #ff69b4);
+                `background: linear-gradient(135deg, #ff1493 0%, #ff69b4 100%);
                  color: white;
-                 box-shadow: 0 0 15px rgba(255, 20, 147, 0.6);` :
-                `background: rgba(255, 255, 255, 0.9);
-                 color: #333;
-                 border: 3px solid #ff69b4;
-                 box-shadow: 0 0 15px rgba(255, 105, 180, 0.4);`
+                 box-shadow: 
+                    0 4px 15px rgba(255, 20, 147, 0.4),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.2);` :
+                `background: rgba(255, 255, 255, 0.12);
+                 color: #ffffff;
+                 border: 1px solid rgba(255, 105, 180, 0.4);
+                 backdrop-filter: blur(10px);
+                 box-shadow: 
+                    0 4px 15px rgba(255, 105, 180, 0.3),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1);`
             }
+        `;
+
+        // Hiệu ứng ripple
+        const ripple = document.createElement('div');
+        ripple.style.cssText = `
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
         `;
 
         // Nội dung button
         if (key.num === 'clear') {
-            button.innerHTML = `${createHeartShape()}<span style="font-size: 0.6em; margin-top: 2px;">CLEAR</span>`;
+            button.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <span style="font-size: 0.7em; opacity: 0.9;">CLEAR</span>
+                </div>
+            `;
         } else if (key.num === 'enter') {
-            button.innerHTML = `${createHeartShape()}<span style="font-size: 0.6em; margin-top: 2px;">ENTER</span>`;
+            button.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <span style="font-size: 0.7em; opacity: 0.9;">ENTER</span>
+                </div>
+            `;
         } else {
-            button.innerHTML = `${createHeartShape()}<span style="margin-top: 2px;">${key.num}</span>`;
+            button.innerHTML = `<span>${key.num}</span>`;
         }
 
-        // Event listener
-        button.addEventListener('click', () => handleKeyPress(key.num));
+        // Event listeners với hiệu ứng
+        button.addEventListener('mouseenter', () => {
+            if (!button.disabled) {
+                button.style.animation = 'buttonHover 0.3s ease-out forwards';
+            }
+        });
+
+        button.addEventListener('mouseleave', () => {
+            if (!button.disabled) {
+                button.style.animation = 'none';
+                button.style.transform = 'scale(1)';
+                if (isSpecial) {
+                    button.style.boxShadow = '0 4px 15px rgba(255, 20, 147, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                } else {
+                    button.style.boxShadow = '0 4px 15px rgba(255, 105, 180, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+                }
+            }
+        });
+
+        button.addEventListener('mousedown', (e) => {
+            if (!button.disabled) {
+                // Hiệu ứng ripple
+                const rect = button.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                
+                button.appendChild(ripple);
+                
+                // Animation press
+                button.style.animation = 'buttonPress 0.2s ease-out';
+                
+                setTimeout(() => {
+                    if (ripple.parentNode) {
+                        ripple.parentNode.removeChild(ripple);
+                    }
+                }, 600);
+            }
+        });
+
+        button.addEventListener('click', () => {
+            if (!button.disabled) {
+                handleKeyPress(key.num);
+                
+                // Hiệu ứng phản hồi
+                button.style.animation = 'pulseGlow 0.4s ease-out';
+                setTimeout(() => {
+                    button.style.animation = 'none';
+                }, 400);
+            }
+        });
 
         keypadDiv.appendChild(button);
     });
 
-    container.appendChild(keypadDiv);
+    keypadContainer.appendChild(keypadDiv);
+    container.appendChild(keypadContainer);
 }
 
 function createStickers(container) {
@@ -3898,30 +4211,55 @@ function createStickers(container) {
         height: 100%;
         pointer-events: none;
         z-index: -1;
+        overflow: hidden;
     `;
 
     const stickerPositions = [
-        { emoji: '💕', top: '10%', left: '5%', size: '3em' },
-        { emoji: '✨', top: '15%', right: '8%', size: '2.5em' },
-        { emoji: '🌟', top: '70%', left: '10%', size: '2.8em' },
-        { emoji: '💖', top: '75%', right: '12%', size: '3.2em' },
-        { emoji: '🦄', top: '45%', left: '2%', size: '3em' },
-        { emoji: '🎀', top: '35%', right: '5%', size: '2.7em' },
-        { emoji: '💫', top: '85%', left: '45%', size: '2.3em' },
-        { emoji: '🌸', top: '20%', left: '80%', size: '2.9em' },
+        { emoji: '✨', top: '8%', left: '5%', size: '2.5em', delay: 0 },
+        { emoji: '💫', top: '12%', right: '8%', size: '2.2em', delay: 0.5 },
+        { emoji: '🌟', top: '75%', left: '10%', size: '2.8em', delay: 1 },
+        { emoji: '💖', top: '80%', right: '12%', size: '3em', delay: 1.5 },
+        { emoji: '🦄', top: '45%', left: '2%', size: '2.7em', delay: 2 },
+        { emoji: '🎀', top: '35%', right: '5%', size: '2.4em', delay: 2.5 },
+        { emoji: '💕', top: '88%', left: '45%', size: '2.3em', delay: 3 },
+        { emoji: '🌸', top: '15%', left: '85%', size: '2.6em', delay: 3.5 },
     ];
+
+    // Thêm CSS cho stickers
+    if (!document.getElementById('sticker-animations')) {
+        const style = document.createElement('style');
+        style.id = 'sticker-animations';
+        style.textContent = `
+            .sticker-pro {
+                animation: floatSticker 4s ease-in-out infinite alternate;
+                filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+            }
+            @keyframes floatSticker {
+                0% { 
+                    transform: translateY(0px) rotate(0deg);
+                    opacity: 0.7;
+                }
+                100% { 
+                    transform: translateY(-10px) rotate(5deg);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
 
     stickerPositions.forEach((sticker, i) => {
         const stickerElement = document.createElement('div');
-        stickerElement.className = 'sticker';
+        stickerElement.className = 'sticker-pro';
         stickerElement.style.cssText = `
             position: absolute;
             ${sticker.top ? `top: ${sticker.top};` : ''}
             ${sticker.left ? `left: ${sticker.left};` : ''}
             ${sticker.right ? `right: ${sticker.right};` : ''}
             font-size: ${sticker.size};
-            animation-delay: ${i * 0.5}s;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            animation-delay: ${sticker.delay}s;
+            user-select: none;
+            z-index: -1;
         `;
         stickerElement.textContent = sticker.emoji;
 
@@ -3938,31 +4276,40 @@ function handleKeyPress(key) {
         pinProtection.currentPIN = '';
         updatePinDisplay();
         messageElement.textContent = '';
+        messageElement.style.animation = 'none';
     } else if (key === 'enter') {
         checkPIN();
     } else if (!isNaN(key) && pinProtection.currentPIN.length < 4) {
         pinProtection.currentPIN += key;
         updatePinDisplay();
-
-        // Hiệu ứng âm thanh (nếu có)
         playKeySound();
     }
 }
+
 function updatePinDisplay() {
     if (!pinProtection.display) return;
 
     const length = pinProtection.currentPIN.length;
     let displayText = '';
 
+    // Hiệu ứng dots chuyên nghiệp
     for (let i = 0; i < 4; i++) {
         if (i < length) {
-            displayText += '💖 ';
+            displayText += '<span style="color: #ff69b4; text-shadow: 0 0 10px rgba(255, 105, 180, 0.8);">●</span> ';
         } else {
-            displayText += '_ ';
+            displayText += '<span style="color: rgba(255, 255, 255, 0.3);">○</span> ';
         }
     }
 
-    pinProtection.display.textContent = displayText.trim();
+    pinProtection.display.innerHTML = displayText.trim();
+    
+    // Hiệu ứng pulse khi nhập
+    if (length > 0) {
+        pinProtection.display.style.animation = 'pulseGlow 0.3s ease-out';
+        setTimeout(() => {
+            pinProtection.display.style.animation = 'none';
+        }, 300);
+    }
 }
 
 function checkPIN() {
@@ -3971,9 +4318,12 @@ function checkPIN() {
     if (pinProtection.currentPIN === pinProtection.correctPIN) {
         // PIN đúng
         messageElement.style.color = '#00ff7f';
-        messageElement.textContent = '💕 Correct! Welcome to Love Galaxy! 💕';
-
+        messageElement.style.textShadow = '0 0 15px rgba(0, 255, 127, 0.8)';
+        messageElement.innerHTML = '✨ <strong>Access Granted!</strong> Welcome to Love Galaxy! 💕';
+        
         // Hiệu ứng thành công
+        messageElement.style.animation = 'pulseGlow 1s ease-out infinite';
+        
         setTimeout(() => {
             unlockGalaxy();
         }, 1500);
@@ -3981,27 +4331,55 @@ function checkPIN() {
         // PIN sai
         pinProtection.attempts++;
         messageElement.style.color = '#ff6b6b';
+        messageElement.style.textShadow = '0 0 15px rgba(255, 107, 107, 0.8)';
 
         if (pinProtection.attempts >= pinProtection.maxAttempts) {
-            messageElement.textContent = `❌ Too many attempts! Please try again later...`;
+            messageElement.innerHTML = '🔒 <strong>Access Denied!</strong> Too many failed attempts...';
             disableKeypad();
         } else {
             const remaining = pinProtection.maxAttempts - pinProtection.attempts;
-            messageElement.textContent = `❌ Wrong PIN! ${remaining} attempts remaining`;
+            messageElement.innerHTML = `❌ <strong>Invalid PIN!</strong> ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining`;
         }
 
-        // Hiệu ứng rung
-        pinProtection.overlay.style.animation = 'shake 0.5s';
+        // Hiệu ứng rung mạnh hơn
+        pinProtection.overlay.style.animation = 'shake 0.6s ease-in-out';
         setTimeout(() => {
             pinProtection.overlay.style.animation = '';
-        }, 500);
+        }, 600);
 
-        // Reset PIN sau 1 giây
+        // Reset PIN sau 1.5 giây
         setTimeout(() => {
             pinProtection.currentPIN = '';
             updatePinDisplay();
-        }, 1000);
+            messageElement.style.animation = 'none';
+        }, 1500);
     }
+}
+function disableKeypad() {
+    const buttons = document.querySelectorAll('.pin-button-pro');
+    buttons.forEach(button => {
+        button.disabled = true;
+        button.style.opacity = '0.3';
+        button.style.cursor = 'not-allowed';
+        button.style.animation = 'none';
+    });
+}
+
+function playKeySound() {
+    // Tạo âm thanh beep nhẹ nhàng
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
 }
 
 window.addEventListener('load', function () {
