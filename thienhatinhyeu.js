@@ -2322,11 +2322,8 @@ function createMultipleHeartFramedImages(imageSrc, baseSize = 3, imageIndex = 0,
         },
         function (progress) {
             console.log('Đang tải ảnh:', Math.round(progress.loaded / progress.total * 100) + '%');
-        },
-        function (error) {
-            console.error('Lỗi tải ảnh:', error);
-            alert('Không thể tải ảnh. Vui lòng thử file khác.');
         }
+        // Đã xóa phần xử lý lỗi để không hiển thị thông báo
     );
 }
 function createDefaultImages() {
