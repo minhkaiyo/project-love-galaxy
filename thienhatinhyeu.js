@@ -111,6 +111,7 @@ let predefinedImages = [];
 // Khởi tạo cảnh
 function init() {
     // Tạo scene
+    
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0a1a);
     scene.fog = new THREE.Fog(0x0a0a1a, 100, 300);
@@ -165,6 +166,8 @@ function startGalaxy() {
 
     // Tạo các vòng chữ
     createTextRings();
+
+    initializeLoveScreenSystem();
 
     // Tạo trường sao nền
     createStarfield();
@@ -1339,7 +1342,7 @@ function animate() {
 
     updateDiamondRain(elapsedTime);
     updateFlowerRain(elapsedTime);
-
+    updateFlatScreens(elapsedTime);
     renderer.render(scene, camera);
 }
 //Xử lý đặc biệt cho mobile devices
@@ -1412,9 +1415,9 @@ let musicPlayer = {
     currentFile: null,
     duration: 0,
     currentTime: 0,
-    defaultAudio: null,       
-    isDefaultPlaying: false,   
-    hasCustomMusic: false 
+    defaultAudio: null,
+    isDefaultPlaying: false,
+    hasCustomMusic: false
 };
 function initSimpleMusicSystem() {
     // Tạo audio element
@@ -1457,15 +1460,15 @@ function initDefaultMusic() {
     musicPlayer.defaultAudio = new Audio();
     musicPlayer.defaultAudio.volume = musicPlayer.volume;
     musicPlayer.defaultAudio.loop = true;
-    
+
     // Sử dụng link trực tiếp đến file nhạc (thay vì link trang web)
     const defaultMusicUrl = 'https://github.com/minhkaiyo/project-love-galaxy/raw/main/N%C6%A1i%20N%C3%A0y%20C%C3%B3%20Anh.mp3';
     musicPlayer.defaultAudio.src = defaultMusicUrl;
-    
+
     // Thêm debug logs
     console.log('🎵 Đang khởi tạo nhạc mặc định...');
     console.log('URL:', defaultMusicUrl);
-    
+
     musicPlayer.defaultAudio.addEventListener('play', () => {
         musicPlayer.isDefaultPlaying = true;
         if (!musicPlayer.hasCustomMusic) {
@@ -1474,7 +1477,7 @@ function initDefaultMusic() {
         }
         console.log('✅ Nhạc mặc định đang phát');
     });
-    
+
     musicPlayer.defaultAudio.addEventListener('pause', () => {
         musicPlayer.isDefaultPlaying = false;
         if (!musicPlayer.hasCustomMusic) {
@@ -1482,21 +1485,21 @@ function initDefaultMusic() {
         }
         console.log('⏸️ Nhạc mặc định đã dừng');
     });
-    
+
     musicPlayer.defaultAudio.addEventListener('error', (e) => {
         console.warn('❌ Không thể load nhạc mặc định:', e);
         // Thử link backup
         tryBackupMusic();
     });
-    
+
     musicPlayer.defaultAudio.addEventListener('loadeddata', () => {
         console.log('✅ Nhạc mặc định đã sẵn sàng');
     });
-    
+
     musicPlayer.defaultAudio.addEventListener('canplay', () => {
         console.log('✅ Có thể phát nhạc mặc định');
     });
-    
+
     // Tự động phát nhạc mặc định sau 3 giây
     setTimeout(() => {
         console.log('🎵 Thử phát nhạc mặc định...');
@@ -1509,41 +1512,41 @@ function tryBackupMusic() {
     const backupUrls = [
         'https://github.com/minhkaiyo/project-love-galaxy/raw/main/N%C6%A1i%20N%C3%A0y%20C%C3%B3%20Anh.mp3',
     ];
-    
+
     let currentIndex = 0;
-    
+
     function tryNext() {
         if (currentIndex >= backupUrls.length) {
             console.warn('❌ Tất cả link nhạc backup đều thất bại');
             createMusicUploadPrompt();
             return;
         }
-        
+
         const url = backupUrls[currentIndex];
         console.log(`🔄 Thử link backup ${currentIndex + 1}:`, url);
-        
+
         musicPlayer.defaultAudio.src = url;
         musicPlayer.defaultAudio.load();
-        
+
         musicPlayer.defaultAudio.addEventListener('canplay', () => {
             console.log('✅ Link backup hoạt động:', url);
             if (!musicPlayer.hasCustomMusic) {
                 playDefaultMusic();
             }
         }, { once: true });
-        
+
         musicPlayer.defaultAudio.addEventListener('error', () => {
             currentIndex++;
             tryNext();
         }, { once: true });
     }
-    
+
     tryNext();
 }
 function createMusicUploadPrompt() {
     // Kiểm tra đã có prompt chưa
     if (document.getElementById('music-upload-prompt')) return;
-    
+
     const prompt = document.createElement('div');
     prompt.id = 'music-upload-prompt';
     prompt.style.cssText = `
@@ -1560,7 +1563,7 @@ function createMusicUploadPrompt() {
         max-width: 400px;
         border: 2px solid rgba(255,255,255,0.2);
     `;
-    
+
     prompt.innerHTML = `
         <div style="color: white; margin-bottom: 20px;">
             <h3 style="margin: 0 0 10px 0; color: #ffd700;">🎵 Thiết lập nhạc nền</h3>
@@ -1606,14 +1609,14 @@ function createMusicUploadPrompt() {
             ">⏭️ Bỏ qua</button>
         </div>
     `;
-    
+
     document.body.appendChild(prompt);
-    
+
     // Xử lý upload
     const fileInput = document.getElementById('prompt-file-input');
     const uploadBtn = document.getElementById('upload-btn');
     const skipBtn = document.getElementById('skip-btn');
-    
+
     uploadBtn.addEventListener('click', () => {
         const file = fileInput.files[0];
         if (file) {
@@ -1623,11 +1626,11 @@ function createMusicUploadPrompt() {
             alert('Vui lòng chọn file nhạc trước!');
         }
     });
-    
+
     skipBtn.addEventListener('click', () => {
         prompt.remove();
     });
-    
+
     fileInput.addEventListener('change', (e) => {
         if (e.target.files[0]) {
             uploadBtn.style.background = 'linear-gradient(45deg, #2196F3, #1976D2)';
@@ -1640,15 +1643,15 @@ function playDefaultMusic() {
     console.log('🎵 playDefaultMusic được gọi');
     console.log('defaultAudio tồn tại:', !!musicPlayer.defaultAudio);
     console.log('hasCustomMusic:', musicPlayer.hasCustomMusic);
-    
+
     if (musicPlayer.defaultAudio && !musicPlayer.hasCustomMusic) {
         console.log('🎵 Đang thử phát nhạc mặc định...');
-        
+
         musicPlayer.defaultAudio.play().then(() => {
             console.log('✅ Phát nhạc mặc định thành công!');
         }).catch(error => {
             console.warn('⚠️ Lỗi autoplay:', error.message);
-            
+
             if (error.name === 'NotAllowedError') {
                 console.log('💡 Tạo nút phát thủ công...');
                 createPlayButton();
@@ -2328,12 +2331,19 @@ function createMultipleHeartFramedImages(imageSrc, baseSize = 3, imageIndex = 0,
 }
 function createDefaultImages() {
     const localImagePaths = [
-        'https://th.bing.com/th/id/R.8625fa7d168ba98dc229c3392683340a?rik=PSjiqd91AMHBKw&riu=http%3a%2f%2f4kwallpapers.com%2fimages%2fwalls%2fthumbs_2t%2f10024.jpg&ehk=YDQEkhfSoLUt%2fWkGv8Pe4RgTsS%2bt1c%2fmZ6mvLhvSvBU%3d&risl=&pid=ImgRaw&r=0'
-        // Cậu có thể thêm nhiều ảnh khác vào đây
+        'https://minhkaiyo.github.io/project-love-galaxy/4f44cae5-ab29-4e2c-8ff8-9ff161ef5370.jpg',
+        'https://minhkaiyo.github.io/project-love-galaxy/5e597510-3fd7-4243-8480-95af337f0d80.jpg',
+        'https://minhkaiyo.github.io/project-love-galaxy/eb7d1900-f5f4-4148-a798-679da6d6cf22.jpg',
+        'https://minhkaiyo.github.io/project-love-galaxy/73c3e604-1f59-41e2-a042-ef78b12e3dc1.jpg',
+        'https://minhkaiyo.github.io/project-love-galaxy/b225e40b-e982-471f-a534-733fc8748a77.jpg',
+        'https://minhkaiyo.github.io/project-love-galaxy/fdf0352c-22cf-4b69-b269-1f8ff5d3b79c.jpg',
+        'https://minhkaiyo.github.io/project-love-galaxy/0a5b57c7-315c-48ee-b8db-a88a956981cb.jpg',
+        'https://github.com/minhkaiyo/project-love-galaxy/raw/main/Screenshot_2025-09-16-22-58-46-745_com.facebook.katana.png'
     ];
 
+
     const imageSizes = [5, 2.5, 3.5, 2.8, 3.2];
-    const copiesPerImage = 30; // Số bản sao cho mỗi ảnh
+    const copiesPerImage = 15; // Số bản sao cho mỗi ảnh
 
     localImagePaths.forEach((imagePath, index) => {
         const size = imageSizes[index] || 3;
@@ -4075,7 +4085,7 @@ function createKeypad(container) {
     keys.forEach((key, index) => {
         const button = document.createElement('button');
         button.className = 'pin-button-pro';
-        
+
         const isSpecial = key.special;
 
         button.style.cssText = `
@@ -4164,16 +4174,16 @@ function createKeypad(container) {
                 const size = Math.max(rect.width, rect.height);
                 const x = e.clientX - rect.left - size / 2;
                 const y = e.clientY - rect.top - size / 2;
-                
+
                 ripple.style.width = ripple.style.height = size + 'px';
                 ripple.style.left = x + 'px';
                 ripple.style.top = y + 'px';
-                
+
                 button.appendChild(ripple);
-                
+
                 // Animation press
                 button.style.animation = 'buttonPress 0.2s ease-out';
-                
+
                 setTimeout(() => {
                     if (ripple.parentNode) {
                         ripple.parentNode.removeChild(ripple);
@@ -4185,7 +4195,7 @@ function createKeypad(container) {
         button.addEventListener('click', () => {
             if (!button.disabled) {
                 handleKeyPress(key.num);
-                
+
                 // Hiệu ứng phản hồi
                 button.style.animation = 'pulseGlow 0.4s ease-out';
                 setTimeout(() => {
@@ -4302,7 +4312,7 @@ function updatePinDisplay() {
     }
 
     pinProtection.display.innerHTML = displayText.trim();
-    
+
     // Hiệu ứng pulse khi nhập
     if (length > 0) {
         pinProtection.display.style.animation = 'pulseGlow 0.3s ease-out';
@@ -4319,11 +4329,11 @@ function checkPIN() {
         // PIN đúng
         messageElement.style.color = '#00ff7f';
         messageElement.style.textShadow = '0 0 15px rgba(0, 255, 127, 0.8)';
-        messageElement.innerHTML = '✨ <strong>Access Granted!</strong> Welcome to Love Galaxy! 💕';
-        
+        messageElement.innerHTML = '✨ <strong></strong> Welcome to Love Galaxy! 💕';
+
         // Hiệu ứng thành công
         messageElement.style.animation = 'pulseGlow 1s ease-out infinite';
-        
+
         setTimeout(() => {
             unlockGalaxy();
         }, 1500);
@@ -4370,14 +4380,14 @@ function playKeySound() {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    
+
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    
+
     oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
     gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-    
+
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.1);
 }
@@ -4501,6 +4511,1114 @@ window.addEventListener('load', function () {
         startGalaxy();
     }
 });
+
+
+// Hệ thống màn hình phẳng dán nền nâng cấp
+let flatScreens = [];
+let musicScreen = null;
+let imageScreens = [];
+let heartParticles = [];
+
+// Cấu hình tối ưu
+const SCREEN_CONFIG = {
+    music: {
+        size: { width: 45, height: 30 },
+        position: { x: 0, y: 20, z: -200 },
+        opacity: 0.85
+    },
+    image: {
+        size: { width: 35, height: 26 },
+        baseOpacity: 0.9, // Tăng opacity để sáng hơn
+        glowIntensity: 1.5,
+        curvature: 0.1 // Thêm độ cong
+    }
+};
+
+// 🖼️ DANH SÁCH LINK ẢNH - THAY ĐỔI Ở ĐÂY
+const IMAGE_LINKS = [
+    'https://minhkaiyo.github.io/project-love-galaxy/4f44cae5-ab29-4e2c-8ff8-9ff161ef5370.jpg',
+    'https://minhkaiyo.github.io/project-love-galaxy/5e597510-3fd7-4243-8480-95af337f0d80.jpg',
+    'https://minhkaiyo.github.io/project-love-galaxy/eb7d1900-f5f4-4148-a798-679da6d6cf22.jpg',
+    'https://minhkaiyo.github.io/project-love-galaxy/73c3e604-1f59-41e2-a042-ef78b12e3dc1.jpg',
+    // 'https://minhkaiyo.github.io/project-love-galaxy/b225e40b-e982-471f-a534-733fc8748a77.jpg',
+    // 'https://minhkaiyo.github.io/project-love-galaxy/fdf0352c-22cf-4b69-b269-1f8ff5d3b79c.jpg',
+    // 'https://minhkaiyo.github.io/project-love-galaxy/0a5b57c7-315c-48ee-b8db-a88a956981cb.jpg',
+    'https://github.com/minhkaiyo/project-love-galaxy/raw/main/Screenshot_2025-09-16-22-58-46-745_com.facebook.katana.png'
+];
+
+// Object để lưu cache ảnh đã load
+const imageCache = new Map();
+
+function createFlatMusicScreen() {
+    // Geometry màn hình phẳng lớn hơn và rõ nét hơn
+    const geometry = new THREE.PlaneGeometry(
+        SCREEN_CONFIG.music.size.width, 
+        SCREEN_CONFIG.music.size.height
+    );
+    
+    // Tạo canvas với độ phân giải cao hơn
+    const canvas = createMusicControlCanvas();
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.magFilter = THREE.LinearFilter;
+    texture.minFilter = THREE.LinearFilter;
+    
+    // Material với hiệu ứng đẹp hơn
+    const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        opacity: SCREEN_CONFIG.music.opacity,
+        side: THREE.FrontSide,
+        depthWrite: false,
+        blending: THREE.NormalBlending
+    });
+    
+    musicScreen = new THREE.Mesh(geometry, material);
+    musicScreen.position.set(
+        SCREEN_CONFIG.music.position.x,
+        SCREEN_CONFIG.music.position.y,
+        SCREEN_CONFIG.music.position.z
+    );
+    
+    // Thêm khung viền sang trọng với nhiều lớp
+    addLuxuriousFrame(
+        musicScreen, 
+        SCREEN_CONFIG.music.size.width, 
+        SCREEN_CONFIG.music.size.height, 
+        0xff1493, 
+        'music'
+    );
+    
+    // Thêm hiệu ứng hạt tim
+    createHeartParticles(musicScreen);
+    
+    scene.add(musicScreen);
+    console.log('Đã tạo màn hình nhạc phẳng nâng cấp');
+}
+
+function createFlatImageScreens() {
+    // Bố trí vị trí xa hơn và cân đối hơn
+    const positions = [
+        { x: -80, y: 15, z: -180, rotation: 0 },      // Trái
+        { x: 80, y: 15, z: -180, rotation: 0 },       // Phải
+        { x: -50, y: 45, z: -160, rotation: -5 },     // Trái trên, xoay nhẹ
+        { x: 50, y: 45, z: -160, rotation: 5 },       // Phải trên, xoay nhẹ
+        { x: 0, y: -15, z: -190, rotation: 0 },       // Dưới giữa
+        { x: -110, y: -5, z: -150, rotation: -8 },    // Trái xa
+        { x: 110, y: -5, z: -150, rotation: 8 }       // Phải xa
+    ];
+    
+    positions.forEach((position, index) => {
+        createSingleFlatImageScreen(position, index);
+    });
+}
+
+function createSingleFlatImageScreen(position, index) {
+    // Geometry cong để tạo hiệu ứng 3D đẹp hơn
+    const geometry = new THREE.PlaneGeometry(
+        SCREEN_CONFIG.image.size.width, 
+        SCREEN_CONFIG.image.size.height,
+        32, 32 // Tăng segments để có thể làm cong
+    );
+    
+    // Làm cong geometry
+    applyCurvatureToGeometry(geometry, SCREEN_CONFIG.image.curvature);
+    
+    // Tạo canvas với độ phân giải cao
+    const canvas = createLuxuryImageCanvas(index);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.magFilter = THREE.LinearFilter;
+    texture.minFilter = THREE.LinearFilter;
+    
+    const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        opacity: SCREEN_CONFIG.image.baseOpacity,
+        side: THREE.FrontSide,
+        depthWrite: false,
+        blending: THREE.NormalBlending
+    });
+    
+    const imageScreen = new THREE.Mesh(geometry, material);
+    imageScreen.position.set(position.x, position.y, position.z);
+    
+    // Xoay nhẹ để tạo độ động
+    if (position.rotation) {
+        imageScreen.rotation.z = position.rotation * Math.PI / 180;
+    }
+    
+    // Thêm khung viền sang trọng với góc trái tim
+    addLuxuriousFrame(
+        imageScreen, 
+        SCREEN_CONFIG.image.size.width, 
+        SCREEN_CONFIG.image.size.height, 
+        getLoveColor(index), 
+        'image'
+    );
+    
+    // Animation data nâng cao
+    imageScreen.userData = {
+        originalPosition: { ...position },
+        floatSpeed: 0.3 + Math.random() * 0.4,
+        floatAmplitude: 1.8,
+        originalOpacity: SCREEN_CONFIG.image.baseOpacity,
+        rotationSpeed: (Math.random() - 0.5) * 0.002,
+        pulsePhase: Math.random() * Math.PI * 2,
+        index: index
+    };
+    
+    imageScreens.push(imageScreen);
+    scene.add(imageScreen);
+}
+
+// Function để làm cong geometry
+function applyCurvatureToGeometry(geometry, curvature) {
+    const positions = geometry.attributes.position.array;
+    
+    for (let i = 0; i < positions.length; i += 3) {
+        const x = positions[i];
+        const y = positions[i + 1];
+        
+        // Áp dụng độ cong theo hướng Z dựa trên vị trí X và Y
+        const distanceFromCenter = Math.sqrt(x * x + y * y);
+        positions[i + 2] = Math.sin(distanceFromCenter * 0.1) * curvature * 10;
+    }
+    
+    geometry.attributes.position.needsUpdate = true;
+    geometry.computeVertexNormals();
+}
+
+function createMusicControlCanvas() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 1200;  // Độ phân giải cao hơn
+    canvas.height = 800;
+    
+    // Background gradient sang trọng
+    const bgGradient = ctx.createRadialGradient(
+        canvas.width/2, canvas.height/2, 0,
+        canvas.width/2, canvas.height/2, canvas.width/2
+    );
+    bgGradient.addColorStop(0, 'rgba(20, 5, 40, 0.95)');
+    bgGradient.addColorStop(0.7, 'rgba(60, 20, 80, 0.9)');
+    bgGradient.addColorStop(1, 'rgba(10, 5, 20, 0.95)');
+    
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Khung viền kim cương
+    drawDiamondFrame(ctx, canvas.width, canvas.height);
+    
+    // Tiêu đề với hiệu ứng đặc biệt
+    drawGlowingTitle(ctx, 'Nơi này có anh - Sơn Tùng MTP', canvas.width/2, 100);
+    
+    // Các nút điều khiển sang trọng
+    const buttonY = 250;
+    const buttonSpacing = 120;
+    const centerX = canvas.width / 2;
+    
+    drawLuxuryButton(ctx, centerX - buttonSpacing*2, buttonY, '⏮', '#9932cc', 50);
+    drawLuxuryButton(ctx, centerX - buttonSpacing, buttonY, '⏸', '#dc143c', 50);
+    drawLuxuryButton(ctx, centerX, buttonY, '▶', '#ff1493', 60); // Nút chính to hơn
+    drawLuxuryButton(ctx, centerX + buttonSpacing, buttonY, '⏸', '#dc143c', 50);
+    drawLuxuryButton(ctx, centerX + buttonSpacing*2, buttonY, '⏭', '#9932cc', 50);
+    
+    // Thanh tiến trình đẹp hơn
+    drawLuxuryProgressBar(ctx, canvas.width, 380);
+    
+    // Thông tin bài hát với typography đẹp
+    drawSongInfo(ctx, canvas.width);
+    
+    // Thêm các hạt sáng trang trí
+    drawSparkleEffects(ctx, canvas.width, canvas.height);
+    
+    return canvas;
+}
+
+function createLuxuryImageCanvas(index) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 800;  // Độ phân giải cao
+    canvas.height = 600;
+    
+    // Background gradient sáng hơn với màu tình yêu
+    const brightLoveColors = [
+        ['rgba(255, 192, 203, 0.95)', 'rgba(255, 182, 193, 0.9)', 'rgba(255, 228, 225, 0.95)'], // Bright pink
+        ['rgba(255, 240, 245, 0.95)', 'rgba(255, 192, 203, 0.9)', 'rgba(255, 182, 193, 0.95)'], // Light pink
+        ['rgba(230, 230, 250, 0.95)', 'rgba(221, 160, 221, 0.9)', 'rgba(218, 112, 214, 0.95)'], // Light lavender
+        ['rgba(255, 228, 196, 0.95)', 'rgba(255, 218, 185, 0.9)', 'rgba(255, 192, 203, 0.95)']  // Peach/pink
+    ];
+    
+    const colorSet = brightLoveColors[index % brightLoveColors.length];
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, colorSet[0]);
+    gradient.addColorStop(0.5, colorSet[1]);
+    gradient.addColorStop(1, colorSet[2]);
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Thêm lớp overlay sáng
+    const brightOverlay = ctx.createRadialGradient(
+        canvas.width/2, canvas.height/2, 0,
+        canvas.width/2, canvas.height/2, Math.min(canvas.width, canvas.height)/2
+    );
+    brightOverlay.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+    brightOverlay.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+    ctx.fillStyle = brightOverlay;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Khung ảnh sang trọng với nhiều lớp
+    drawLuxuryPhotoFrame(ctx, canvas.width, canvas.height, index);
+    
+    // 🖼️ TỰ ĐỘNG LOAD ẢNH THẬT TỪ LINK (NẾU CÓ)
+    const imageUrl = IMAGE_LINKS[index % IMAGE_LINKS.length];
+    if (imageUrl && imageUrl !== 'https://minhkaiyo.github.io/project-love-galaxy/0a5b57c7-315c-48ee-b8db-a88a956981cb.jpg') {
+        loadRealImageToCanvas(ctx, imageUrl, canvas.width, canvas.height, index);
+    } else {
+        // Nội dung ảnh placeholder sáng hơn (nếu không có ảnh thật)
+        drawBrightMemoryPlaceholder(ctx, canvas.width, canvas.height, index);
+    }
+    
+    // Hiệu ứng bokeh hearts sáng hơn
+    drawBrightBokehHearts(ctx, canvas.width, canvas.height);
+    
+    return canvas;
+}
+
+//FUNCTION LOAD ẢNH THẬT TỪ URL
+function loadRealImageToCanvas(ctx, imageUrl, canvasWidth, canvasHeight, index) {
+    // Kiểm tra cache trước
+    if (imageCache.has(imageUrl)) {
+        drawImageWithFrame(ctx, imageCache.get(imageUrl), canvasWidth, canvasHeight, index);
+        return;
+    }
+    
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // Để tránh CORS error
+    
+    img.onload = function() {
+        // Lưu vào cache
+        imageCache.set(imageUrl, img);
+        
+        // Vẽ ảnh lên canvas
+        drawImageWithFrame(ctx, img, canvasWidth, canvasHeight, index);
+        
+        // Cập nhật texture (nếu screen đã được tạo)
+        updateScreenTexture(index, ctx.canvas);
+    };
+    
+    img.onerror = function() {
+        console.warn(`Không thể load ảnh: ${imageUrl}`);
+        // Fallback về placeholder
+        drawBrightMemoryPlaceholder(ctx, canvasWidth, canvasHeight, index);
+    };
+    
+    img.src = imageUrl;
+}
+
+//VẼ ẢNH THẬT VỚI KHUNG
+function drawImageWithFrame(ctx, img, canvasWidth, canvasHeight, index) {
+    const margin = 60; // Để chỗ cho khung
+    const imageWidth = canvasWidth - margin * 2;
+    const imageHeight = canvasHeight - margin * 2;
+    
+    // Tính toán để fit ảnh vào khung
+    const imgAspect = img.width / img.height;
+    const frameAspect = imageWidth / imageHeight;
+    
+    let drawWidth, drawHeight, drawX, drawY;
+    
+    if (imgAspect > frameAspect) {
+        // Ảnh rộng hơn frame
+        drawWidth = imageWidth;
+        drawHeight = imageWidth / imgAspect;
+        drawX = margin;
+        drawY = margin + (imageHeight - drawHeight) / 2;
+    } else {
+        // Ảnh cao hơn frame
+        drawHeight = imageHeight;
+        drawWidth = imageHeight * imgAspect;
+        drawX = margin + (imageWidth - drawWidth) / 2;
+        drawY = margin;
+    }
+    
+    // Thêm shadow cho ảnh
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 15;
+    ctx.shadowOffsetX = 5;
+    ctx.shadowOffsetY = 5;
+    
+    // Vẽ ảnh
+    ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+    
+    // Thêm overlay sáng nhẹ để hòa hợp
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.fillRect(drawX, drawY, drawWidth, drawHeight);
+    
+    ctx.restore();
+    
+    // Thêm caption
+    drawImageCaption(ctx, index, canvasWidth, canvasHeight - 30);
+}
+
+//VẼ CAPTION CHO ẢNH
+function drawImageCaption(ctx, index, centerX, y) {
+    const captions = [
+        '💕 Sweet Memory 💕',
+        '🌹 Beautiful Moment 🌹', 
+        '💖 Our Love Story 💖',
+        '👑 Special Day 👑',
+        '🥰 Together Forever 🥰',
+        '💝 Precious Time 💝',
+        '🌟 Dream Come True 🌟'
+    ];
+    
+    ctx.save();
+    ctx.fillStyle = '#8B0000';
+    ctx.font = 'bold 24px Georgia';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#ffffff';
+    ctx.shadowBlur = 10;
+    ctx.fillText(captions[index % captions.length], centerX / 2, y);
+    ctx.restore();
+}
+
+//CẬP NHẬT TEXTURE CHO SCREEN
+function updateScreenTexture(screenIndex, canvas) {
+    if (screenIndex < imageScreens.length) {
+        const screen = imageScreens[screenIndex];
+        if (screen && screen.material && screen.material.map) {
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.magFilter = THREE.LinearFilter;
+            texture.minFilter = THREE.LinearFilter;
+            
+            // Dispose texture cũ
+            screen.material.map.dispose();
+            
+            // Gán texture mới
+            screen.material.map = texture;
+            screen.material.needsUpdate = true;
+        }
+    }
+}
+
+//FUNCTION ĐỂ THAY ĐỔI ẢNH ĐỘNG (TÙY CHỌN)
+function updateImageLinks(newImageLinks) {
+    // Cập nhật danh sách ảnh mới
+    IMAGE_LINKS.length = 0; // Clear array
+    IMAGE_LINKS.push(...newImageLinks);
+    
+    // Xóa cache cũ
+    imageCache.clear();
+    
+    // Recreate tất cả image screens
+    recreateImageScreens();
+}
+
+function recreateImageScreens() {
+    // Cleanup screens cũ
+    imageScreens.forEach(screen => {
+        if (screen.material.map) {
+            screen.material.map.dispose();
+        }
+        screen.material.dispose();
+        screen.geometry.dispose();
+        scene.remove(screen);
+    });
+    imageScreens.length = 0;
+    
+    // Tạo lại với ảnh mới
+    createFlatImageScreens();
+}
+
+function drawDiamondFrame(ctx, width, height) {
+    const margin = 25;
+    
+    // Outer glow
+    ctx.strokeStyle = '#ff1493';
+    ctx.lineWidth = 8;
+    ctx.shadowColor = '#ff1493';
+    ctx.shadowBlur = 30;
+    ctx.strokeRect(margin, margin, width - margin*2, height - margin*2);
+    
+    // Inner frame
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 15;
+    ctx.strokeRect(margin + 10, margin + 10, width - (margin + 10)*2, height - (margin + 10)*2);
+    
+    // Corner hearts instead of diamonds
+    const corners = [
+        [margin + 20, margin + 20],
+        [width - margin - 20, margin + 20],
+        [width - margin - 20, height - margin - 20],
+        [margin + 20, height - margin - 20]
+    ];
+    
+    corners.forEach(([x, y]) => {
+        drawHeart(ctx, x, y, 8, '#ff69b4');
+    });
+}
+
+function drawHeart(ctx, x, y, size, color) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 20;
+    
+    ctx.beginPath();
+    ctx.moveTo(x, y + size/4);
+    ctx.bezierCurveTo(x, y, x - size/2, y, x - size/2, y + size/4);
+    ctx.bezierCurveTo(x - size/2, y + size/2, x, y + size*3/4, x, y + size);
+    ctx.bezierCurveTo(x, y + size*3/4, x + size/2, y + size/2, x + size/2, y + size/4);
+    ctx.bezierCurveTo(x + size/2, y, x, y, x, y + size/4);
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawGlowingTitle(ctx, text, x, y) {
+    ctx.save();
+    ctx.fillStyle = '#ff1493';
+    ctx.font = 'bold 64px Georgia';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#ff69b4';
+    ctx.shadowBlur = 40;
+    
+    // Multiple layers for glow effect
+    for (let i = 0; i < 3; i++) {
+        ctx.fillText(text, x, y);
+    }
+    
+    // Top layer in white
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowBlur = 10;
+    ctx.fillText(text, x, y);
+    ctx.restore();
+}
+
+function drawLuxuryButton(ctx, x, y, symbol, color, size) {
+    ctx.save();
+    
+    // Outer glow ring
+    ctx.beginPath();
+    ctx.arc(x, y, size + 8, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 25;
+    ctx.fill();
+    
+    // Main button
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    const buttonGradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+    buttonGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+    buttonGradient.addColorStop(0.7, color);
+    buttonGradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
+    ctx.fillStyle = buttonGradient;
+    ctx.fill();
+    
+    // Inner rim
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 5;
+    ctx.stroke();
+    
+    // Symbol
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${size/2}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#000000';
+    ctx.shadowBlur = 5;
+    ctx.fillText(symbol, x, y);
+    
+    ctx.restore();
+}
+
+function drawLuxuryProgressBar(ctx, width, y) {
+    const barWidth = width - 200;
+    const barHeight = 35;
+    const x = (width - barWidth) / 2;
+    
+    // Background track
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.fillRect(x, y, barWidth, barHeight);
+    
+    // Progress gradient
+    const progressGradient = ctx.createLinearGradient(x, y, x + barWidth * 0.6, y);
+    progressGradient.addColorStop(0, '#ff1493');
+    progressGradient.addColorStop(0.5, '#ff69b4');
+    progressGradient.addColorStop(1, '#ff1493');
+    
+    ctx.fillStyle = progressGradient;
+    ctx.shadowColor = '#ff1493';
+    ctx.shadowBlur = 15;
+    ctx.fillRect(x, y, barWidth * 0.6, barHeight);
+    
+    // Progress indicator
+    const indicatorX = x + barWidth * 0.6;
+    ctx.beginPath();
+    ctx.arc(indicatorX, y + barHeight/2, 18, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = '#ffffff';
+    ctx.shadowBlur = 20;
+    ctx.fill();
+    
+    // Time labels
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '28px Georgia';
+    ctx.textAlign = 'left';
+    ctx.fillText('2:34', x, y + 70);
+    ctx.textAlign = 'right';
+    ctx.fillText('4:12', x + barWidth, y + 70);
+}
+
+function drawSongInfo(ctx, width) {
+    const centerX = width / 2;
+    
+    // Song title
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 42px Georgia';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#ff69b4';
+    ctx.shadowBlur = 15;
+    ctx.fillText('♪ Mãi iu bé ♪', centerX, 520);
+    
+    // Artist
+    ctx.fillStyle = '#ffb6c1';
+    ctx.font = '32px Georgia';
+    ctx.fillText('💖 My Love 💖', centerX, 570);
+    
+    // Volume indicator
+    ctx.fillStyle = '#ff69b4';
+    ctx.font = '28px Arial';
+    ctx.fillText('♫ Volume: █████████████░░ 50% ♫', centerX, 640);
+}
+
+function drawSparkleEffects(ctx, width, height) {
+    const sparkles = 20;
+    ctx.fillStyle = '#ffffff';
+    
+    for (let i = 0; i < sparkles; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const size = Math.random() * 3 + 1;
+        
+        ctx.save();
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+function drawLuxuryPhotoFrame(ctx, width, height, index) {
+    const margin = 40;
+    const frameWidth = 20;
+    
+    // Outer shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'; // Nhẹ hơn để không làm tối
+    ctx.shadowBlur = 30;
+    ctx.fillStyle = '#8B4513';
+    ctx.fillRect(margin - frameWidth, margin - frameWidth, 
+                width - 2*(margin - frameWidth), height - 2*(margin - frameWidth));
+    
+    // Gold frame sáng hơn
+    const goldGradient = ctx.createLinearGradient(0, 0, width, height);
+    goldGradient.addColorStop(0, '#FFD700');
+    goldGradient.addColorStop(0.5, '#FFDF00'); // Sáng hơn
+    goldGradient.addColorStop(1, '#FFE55C'); // Sáng hơn
+    
+    ctx.fillStyle = goldGradient;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#FFD700';
+    ctx.fillRect(margin - frameWidth, margin - frameWidth, 
+                width - 2*(margin - frameWidth), height - 2*(margin - frameWidth));
+    
+    // Inner frame sáng hơn
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'; // Sáng hơn
+    ctx.fillRect(margin, margin, width - 2*margin, height - 2*margin);
+    
+    // Decorative heart corners thay vì round corners
+    const cornerSize = 20; // Tăng kích thước
+    const corners = [
+        [margin + 10, margin + 10],
+        [width - margin - 30, margin + 10],
+        [width - margin - 30, height - margin - 30],
+        [margin + 10, height - margin - 30]
+    ];
+    
+    corners.forEach(([x, y]) => {
+        drawLoveCorner(ctx, x, y, cornerSize);
+    });
+}
+
+function drawLoveCorner(ctx, x, y, size) {
+    ctx.save();
+    ctx.fillStyle = '#ff1493';
+    ctx.shadowColor = '#ff1493';
+    ctx.shadowBlur = 15;
+    
+    // Heart shape
+    ctx.beginPath();
+    ctx.moveTo(x + size/2, y + size/4);
+    ctx.bezierCurveTo(x + size/2, y, x, y, x, y + size/4);
+    ctx.bezierCurveTo(x, y + size/2, x + size/2, y + size*3/4, x + size/2, y + size);
+    ctx.bezierCurveTo(x + size/2, y + size*3/4, x + size, y + size/2, x + size, y + size/4);
+    ctx.bezierCurveTo(x + size, y, x + size/2, y, x + size/2, y + size/4);
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawBrightMemoryPlaceholder(ctx, width, height, index) {
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    // Memory number với màu sáng hơn
+    ctx.fillStyle = '#ff1493';
+    ctx.font = 'bold 48px Georgia';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#ff69b4';
+    ctx.shadowBlur = 20;
+    ctx.fillText(`MEMORY ${index + 1}`, centerX, centerY - 40);
+    
+    // Love message sáng hơn
+    const loveMessages = [
+        '💕 First Kiss 💕',
+        '🌹 Our Wedding 🌹', 
+        '💖 Honeymoon 💖',
+        '👑 Anniversary 👑',
+        '🥰 Sweet Moments 🥰',
+        '💝 Forever Love 💝',
+        '🌟 Dream Together 🌟'
+    ];
+    
+    ctx.fillStyle = '#8B0000'; // Màu đỏ đậm thay vì trắng
+    ctx.font = '32px Georgia';
+    ctx.shadowColor = '#ffffff';
+    ctx.shadowBlur = 10;
+    ctx.fillText(loveMessages[index % loveMessages.length], centerX, centerY + 20);
+    
+    // Date placeholder sáng hơn
+    ctx.fillStyle = '#DC143C'; // Màu đỏ cherry
+    ctx.font = '24px Arial';
+    ctx.fillText(`${2020 + index}.${(index % 12) + 1}.${(index % 28) + 1}`, centerX, centerY + 60);
+}
+
+function drawBrightBokehHearts(ctx, width, height) {
+    const hearts = 12; // Tăng số lượng
+    
+    for (let i = 0; i < hearts; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const size = Math.random() * 20 + 8; // Tăng kích thước
+        const alpha = Math.random() * 0.6 + 0.3; // Tăng độ sáng
+        
+        drawBrightBokehHeart(ctx, x, y, size, alpha);
+    }
+}
+
+function drawBrightBokehHeart(ctx, x, y, size, alpha) {
+    ctx.save();
+    
+    // Sử dụng màu sáng hơn
+    const heartColors = [
+        `rgba(255, 182, 193, ${alpha})`, // Light pink
+        `rgba(255, 192, 203, ${alpha})`, // Pink  
+        `rgba(255, 228, 225, ${alpha})`, // Misty rose
+        `rgba(255, 240, 245, ${alpha})`  // Lavender blush
+    ];
+    
+    ctx.fillStyle = heartColors[Math.floor(Math.random() * heartColors.length)];
+    ctx.shadowColor = '#ffb6c1';
+    ctx.shadowBlur = size * 1.5; // Tăng glow
+    
+    ctx.beginPath();
+    ctx.moveTo(x, y + size/4);
+    ctx.bezierCurveTo(x, y, x - size/2, y, x - size/2, y + size/4);
+    ctx.bezierCurveTo(x - size/2, y + size/2, x, y + size*3/4, x, y + size);
+    ctx.bezierCurveTo(x, y + size*3/4, x + size/2, y + size/2, x + size/2, y + size/4);
+    ctx.bezierCurveTo(x + size/2, y, x, y, x, y + size/4);
+    ctx.fill();
+    ctx.restore();
+}
+
+function addLuxuriousFrame(mesh, width, height, color, type) {
+    const group = new THREE.Group();
+    
+    // Main border với hiệu ứng glow
+    const borderGeometry = new THREE.BufferGeometry();
+    const borderVertices = new Float32Array([
+        -width/2, -height/2, 0.01,  width/2, -height/2, 0.01,
+         width/2, -height/2, 0.01,  width/2,  height/2, 0.01,
+         width/2,  height/2, 0.01, -width/2,  height/2, 0.01,
+        -width/2,  height/2, 0.01, -width/2, -height/2, 0.01
+    ]);
+    
+    borderGeometry.setAttribute('position', new THREE.BufferAttribute(borderVertices, 3));
+    
+    // Multiple border layers for depth
+    const borderMaterials = [
+        new THREE.LineBasicMaterial({
+            color: color,
+            linewidth: 4,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending
+        }),
+        new THREE.LineBasicMaterial({
+            color: 0xffffff,
+            linewidth: 2,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        })
+    ];
+    
+    borderMaterials.forEach(material => {
+        const borderLine = new THREE.LineSegments(borderGeometry, material);
+        group.add(borderLine);
+    });
+    
+    // Heart corner decorations thay vì round corners
+    if (type === 'image') {
+        addHeartCornerDecorations(group, width, height, color);
+    }
+    
+    mesh.add(group);
+}
+
+function addHeartCornerDecorations(group, width, height, color) {
+    // Tạo heart geometry thay vì sphere
+    const heartGeometry = createHeartGeometry(2);
+    const heartMaterial = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.9,
+        blending: THREE.AdditiveBlending
+    });
+    
+    const corners = [
+        [-width/2, -height/2, 0.02],
+        [width/2, -height/2, 0.02],
+        [width/2, height/2, 0.02],
+        [-width/2, height/2, 0.02]
+    ];
+    
+    corners.forEach(([x, y, z]) => {
+        const corner = new THREE.Mesh(heartGeometry, heartMaterial);
+        corner.position.set(x, y, z);
+        corner.scale.setScalar(1.5); // Tăng kích thước
+        group.add(corner);
+    });
+}
+
+// Tạo heart geometry 3D
+function createHeartGeometry(size = 1) {
+    const heartShape = new THREE.Shape();
+    
+    const x = 0, y = 0;
+    heartShape.moveTo(x + size * 0.5, y + size * 0.25);
+    heartShape.bezierCurveTo(x + size * 0.5, y, x, y, x, y + size * 0.25);
+    heartShape.bezierCurveTo(x, y + size * 0.5, x + size * 0.25, y + size * 0.75, x + size * 0.5, y + size);
+    heartShape.bezierCurveTo(x + size * 0.75, y + size * 0.75, x + size, y + size * 0.5, x + size, y + size * 0.25);
+    heartShape.bezierCurveTo(x + size, y, x + size * 0.5, y, x + size * 0.5, y + size * 0.25);
+    
+    const extrudeSettings = {
+        depth: size * 0.3,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        steps: 2,
+        bevelSize: size * 0.1,
+        bevelThickness: size * 0.1
+    };
+    
+    return new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+}
+
+function getLoveColor(index) {
+    const loveColors = [
+        0xff1493, // Deep Pink
+        0xff69b4, // Hot Pink  
+        0xda70d6, // Orchid
+        0xba55d3, // Medium Orchid
+        0x9370db, // Medium Purple
+        0x8a2be2, // Blue Violet
+        0xff6347  // Tomato
+    ];
+    return loveColors[index % loveColors.length];
+}
+
+function createHeartParticles(parentMesh) {
+    const particleCount = 15;
+    
+    for (let i = 0; i < particleCount; i++) {
+        const heartGeometry = createHeartGeometry(0.3);
+        const heartMaterial = new THREE.MeshBasicMaterial({
+            color: Math.random() > 0.5 ? 0xff69b4 : 0xff1493,
+            transparent: true,
+            opacity: 0.7,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const heart = new THREE.Mesh(heartGeometry, heartMaterial);
+        heart.position.set(
+            (Math.random() - 0.5) * 60,
+            (Math.random() - 0.5) * 40,
+            Math.random() * 10
+        );
+        
+        heart.userData = {
+            velocity: {
+                x: (Math.random() - 0.5) * 0.02,
+                y: Math.random() * 0.01 + 0.005,
+                z: (Math.random() - 0.5) * 0.01
+            },
+            life: Math.random() * 100 + 100,
+            rotationSpeed: {
+                x: (Math.random() - 0.5) * 0.02,
+                y: (Math.random() - 0.5) * 0.02,
+                z: (Math.random() - 0.5) * 0.02
+            }
+        };
+        
+        heartParticles.push(heart);
+        parentMesh.add(heart);
+    }
+}
+
+function updateFlatScreens(elapsedTime) {
+    // Cập nhật màn hình nhạc với hiệu ứng mượt mà hơn
+    if (musicScreen) {
+        // Hiệu ứng pulse êm dịu
+        const pulse = Math.sin(elapsedTime * 1.2) * 0.08 + SCREEN_CONFIG.music.opacity;
+        musicScreen.material.opacity = Math.max(0.7, pulse);
+        
+        // Bay lơ lửng mượt mà
+        musicScreen.position.y = SCREEN_CONFIG.music.position.y + 
+            Math.sin(elapsedTime * 0.6) * 1.5;
+        
+        // Xoay nhẹ
+        musicScreen.rotation.y = Math.sin(elapsedTime * 0.3) * 0.02;
+    }
+    
+    // Cập nhật màn hình ảnh với animation phức tạp hơn
+    imageScreens.forEach((screen, i) => {
+        const userData = screen.userData;
+        
+        // Bay lơ lửng với pattern phức tạp
+        const floatY = userData.originalPosition.y +
+            Math.sin(elapsedTime * userData.floatSpeed + i * 0.7) * userData.floatAmplitude +
+            Math.sin(elapsedTime * 0.3 + i) * 0.5;
+        screen.position.y = floatY;
+        
+        // Xoay nhẹ với hiệu ứng sóng 3D
+        screen.rotation.z = userData.originalPosition.rotation * Math.PI / 180 +
+            Math.sin(elapsedTime + i) * 0.01;
+        screen.rotation.x = Math.sin(elapsedTime * 0.5 + i * 0.3) * 0.005;
+        
+        // Hiệu ứng pulse opacity sáng hơn
+        const pulseOpacity = Math.sin(elapsedTime * 0.8 + userData.pulsePhase) * 0.1 + 
+            userData.originalOpacity;
+        screen.material.opacity = Math.max(0.7, pulseOpacity); // Minimum opacity cao hơn
+        
+        // Scale effect nhẹ với breathing effect
+        const breathe = Math.sin(elapsedTime * 0.4 + i * 0.5) * 0.02;
+        const scale = 1 + breathe;
+        screen.scale.set(scale, scale, scale);
+    });
+    
+    // Cập nhật hạt tim với animation 3D
+    heartParticles.forEach((heart, index) => {
+        const userData = heart.userData;
+        
+        // Di chuyển với gravity effect
+        heart.position.x += userData.velocity.x;
+        heart.position.y += userData.velocity.y;
+        heart.position.z += userData.velocity.z;
+        
+        // Thêm wind effect
+        heart.position.x += Math.sin(elapsedTime * 0.5 + index) * 0.005;
+        
+        // Rotation 3D cho heart particles
+        heart.rotation.x += userData.rotationSpeed.x;
+        heart.rotation.y += userData.rotationSpeed.y;
+        heart.rotation.z += userData.rotationSpeed.z;
+        
+        // Giảm life
+        userData.life--;
+        
+        // Fade out với sparkle effect
+        const opacity = Math.max(0, userData.life / 100 * 0.7);
+        heart.material.opacity = opacity + Math.sin(elapsedTime * 3 + index) * 0.1;
+        
+        // Scale effect cho particles
+        const particleScale = 0.5 + Math.sin(elapsedTime * 2 + index) * 0.2;
+        heart.scale.setScalar(particleScale);
+        
+        // Reset particle khi hết life
+        if (userData.life <= 0) {
+            heart.position.set(
+                (Math.random() - 0.5) * 60,
+                -25,
+                Math.random() * 10
+            );
+            userData.life = Math.random() * 100 + 100;
+            userData.velocity = {
+                x: (Math.random() - 0.5) * 0.02,
+                y: Math.random() * 0.01 + 0.005,
+                z: (Math.random() - 0.5) * 0.01
+            };
+            userData.rotationSpeed = {
+                x: (Math.random() - 0.5) * 0.02,
+                y: (Math.random() - 0.5) * 0.02,
+                z: (Math.random() - 0.5) * 0.02
+            };
+        }
+    });
+}
+
+function optimizeScreenRendering() {
+    // Cập nhật texture chỉ khi cần thiết
+    if (musicScreen && musicScreen.material.map) {
+        musicScreen.material.map.needsUpdate = false;
+    }
+    
+    imageScreens.forEach(screen => {
+        if (screen.material.map) {
+            screen.material.map.needsUpdate = false;
+        }
+    });
+}
+
+// Function để điều chỉnh chất lượng dựa trên hiệu suất
+function adjustQualityBasedOnPerformance(fps) {
+    const lowFpsThreshold = 30;
+    
+    if (fps < lowFpsThreshold) {
+        // Giảm số lượng hạt tim
+        if (heartParticles.length > 8) {
+            const particlesToRemove = heartParticles.splice(8);
+            particlesToRemove.forEach(particle => {
+                particle.geometry.dispose();
+                particle.material.dispose();
+                if (particle.parent) {
+                    particle.parent.remove(particle);
+                }
+            });
+        }
+        
+        // Giảm độ phức tạp của hiệu ứng
+        imageScreens.forEach(screen => {
+            screen.userData.floatAmplitude *= 0.8;
+        });
+    }
+}
+
+// Function để tạo hiệu ứng đặc biệt khi hover (nếu có interaction)
+function createHoverEffect(screen, isHovering) {
+    if (isHovering) {
+        // Tăng kích thước và độ sáng
+        screen.scale.setScalar(1.15);
+        screen.material.opacity = Math.min(1.0, screen.userData.originalOpacity + 0.3);
+        
+        // Thêm hiệu ứng glow cho frame
+        if (screen.children.length > 0) {
+            screen.children[0].children.forEach(child => {
+                if (child.material && child.material.opacity !== undefined) {
+                    child.material.opacity = Math.min(1.0, child.material.opacity * 1.5);
+                }
+            });
+        }
+        
+        // Thêm hiệu ứng xoay khi hover
+        screen.rotation.y += 0.01;
+    } else {
+        // Trở về trạng thái bình thường
+        screen.scale.setScalar(1.0);
+        screen.material.opacity = screen.userData.originalOpacity;
+        
+        if (screen.children.length > 0) {
+            screen.children[0].children.forEach(child => {
+                if (child.material && child.material.opacity !== undefined) {
+                    child.material.opacity = child.material.opacity / 1.5;
+                }
+            });
+        }
+    }
+}
+
+// Function để cleanup khi không cần thiết
+function cleanupScreens() {
+    // Cleanup music screen
+    if (musicScreen) {
+        if (musicScreen.material.map) {
+            musicScreen.material.map.dispose();
+        }
+        musicScreen.material.dispose();
+        musicScreen.geometry.dispose();
+        scene.remove(musicScreen);
+        musicScreen = null;
+    }
+    
+    // Cleanup image screens
+    imageScreens.forEach(screen => {
+        if (screen.material.map) {
+            screen.material.map.dispose();
+        }
+        screen.material.dispose();
+        screen.geometry.dispose();
+        scene.remove(screen);
+    });
+    imageScreens = [];
+    
+    // Cleanup heart particles
+    heartParticles.forEach(particle => {
+        particle.material.dispose();
+        particle.geometry.dispose();
+        if (particle.parent) {
+            particle.parent.remove(particle);
+        }
+    });
+    heartParticles = [];
+    
+    flatScreens = [];
+    
+    console.log('Đã cleanup tất cả screens và particles');
+}
+
+// Function chính để khởi tạo hệ thống
+function initializeLoveScreenSystem() {
+    console.log('Bắt đầu khởi tạo hệ thống màn hình tình yêu nâng cấp...');
+    
+    // Tạo màn hình nhạc
+    createFlatMusicScreen();
+    
+    // Tạo các màn hình ảnh với hiệu ứng cong
+    createFlatImageScreens();
+    
+    // Tối ưu hiệu suất ban đầu
+    optimizeScreenRendering();
+    
+    console.log(`Đã tạo thành công ${imageScreens.length} màn hình ảnh cong và 1 màn hình nhạc`);
+    console.log(`Tổng số hạt tim 3D: ${heartParticles.length}`);
+}
+
+// Export functions để sử dụng bên ngoài
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        initializeLoveScreenSystem,
+        updateFlatScreens,
+        cleanupScreens,
+        adjustQualityBasedOnPerformance,
+        createHoverEffect,
+        SCREEN_CONFIG
+    };
+}
+
 
 
 
