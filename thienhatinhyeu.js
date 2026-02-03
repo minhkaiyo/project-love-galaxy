@@ -3898,8 +3898,7 @@ function createIntroText(container) {
             💝 Love Galaxy Lock 💝
         </h1>
         <p style="font-size: 1.2em; margin: 10px 0; line-height: 1.6;">
-            Chào bé iu! 💕<br>
-            Để mở món quà này hãy nhập mã bí mật của chúng mình nhé!
+            Pass: 1809
         </p>
         <p style="font-size: 1em; color: #ffb6c1; margin: 15px 0;">
             💡 <strong>Gợi ý:</strong> Ngày kỷ niệm bắt đầu... 🎄✨
@@ -5620,3 +5619,4 @@ if (typeof module !== 'undefined' && module.exports) {
 
 
 window.addEventListener('load', init);
+
