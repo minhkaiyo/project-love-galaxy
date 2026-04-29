@@ -4,6 +4,10 @@
 ![Language](https://img.shields.io/badge/Language-Vanilla%20JavaScript-yellow)
 ![Code Quality](https://img.shields.io/badge/Scale-6000+%20Lines%20of%20Code-blue)
 
+<p align="center">
+  <img src="images/love_galaxy_preview.png" alt="Love Galaxy Preview" width="800">
+</p>
+
 A high-performance, aesthetically stunning web project that creates an immersive "Love Galaxy" experience using advanced HTML5 Canvas and mathematical logic.
 
 ## ✨ Highlights
