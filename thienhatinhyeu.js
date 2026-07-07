@@ -551,9 +551,9 @@ function createPlanetParticles() {
 // Tạo vòng chữ
 function createTextRings() {
     const ringConfigs = [
-        { radius: 12, text: "💖 I LOVE YOU 💖", color: '#ff1493', fontSize: 120, yOffset: 2 },
+        { radius: 12, text: "💖 MÃI IU BA 💖", color: '#ff1493', fontSize: 120, yOffset: 2 },
         { radius: 16, text: "✨ FOREVER ✨", color: '#ff69b4', fontSize: 100, yOffset: -1 },
-        { radius: 20, text: "💕 YOU & ME 💕", color: '#ffb6c1', fontSize: 80, yOffset: 1.5 }
+        { radius: 20, text: "💕 BA LÀ NHÀ 💕", color: '#ffb6c1', fontSize: 80, yOffset: 1.5 }
     ];
 
     ringConfigs.forEach((config, i) => {
@@ -3850,7 +3850,7 @@ sayHello("World");
 
 let pinProtection = {
     isActive: true,
-    correctPIN: '1809', // Mã PIN - bạn có thể thay đổi ở đây
+    correctPIN: '2512', // Mã PIN - bạn có thể thay đổi ở đây
     currentPIN: '',
     overlay: null,
     keypad: null,
@@ -3895,16 +3895,16 @@ function createIntroText(container) {
 
     introDiv.innerHTML = `
         <h1 style="font-size: 2.5em; margin: 0; color: #ff69b4; animation: glow 2s infinite alternate;">
-            💝 Love Galaxy Lock 💝
+            💝 BA Galaxy Lock 💝
         </h1>
         <p style="font-size: 1.2em; margin: 10px 0; line-height: 1.6;">
-            Pass: 1809
+            Pass: xxxx
         </p>
         <p style="font-size: 1em; color: #ffb6c1; margin: 15px 0;">
-            💡 <strong>Gợi ý:</strong> Ngày kỷ niệm bắt đầu... 🎄✨
+            💡 <strong>Gợi ý:</strong> Ngày BA thành lập... ✨
         </p>
         <p style="font-size: 0.9em; color: #ffc0cb; opacity: 0.8;">
-            (Hint: DD/MM - 4 chữ số)
+            (Hint: DD/MM)
         </p>
     `;
 
@@ -4325,7 +4325,7 @@ function checkPIN() {
         // PIN đúng
         messageElement.style.color = '#00ff7f';
         messageElement.style.textShadow = '0 0 15px rgba(0, 255, 127, 0.8)';
-        messageElement.innerHTML = '✨ <strong></strong> Welcome to Love Galaxy! 💕';
+        messageElement.innerHTML = '✨ <strong></strong> Welcome to BA Galaxy! 💕';
 
         // Hiệu ứng thành công
         messageElement.style.animation = 'pulseGlow 1s ease-out infinite';
@@ -4415,7 +4415,7 @@ function unlockGalaxy() {
         // Bắt đầu galaxy
         startGalaxy();
 
-        console.log('Love Galaxy unlocked! 💕');
+        console.log('BA Galaxy unlocked! 💕');
     }, 1000); // Giảm thời gian chờ xuống 1 giây
 }
 function disableKeypad() {
@@ -4705,7 +4705,7 @@ function createMusicControlCanvas() {
     drawDiamondFrame(ctx, canvas.width, canvas.height);
     
     // Tiêu đề với hiệu ứng đặc biệt
-    drawGlowingTitle(ctx, 'Nơi này có anh - Sơn Tùng MTP', canvas.width/2, 100);
+    drawGlowingTitle(ctx, 'Cảm ơn người đã thức cùng tôi - Phùng Khánh Linh', canvas.width/2, 100);
     
     // Các nút điều khiển sang trọng
     const buttonY = 250;
@@ -5079,12 +5079,12 @@ function drawSongInfo(ctx, width) {
     ctx.textAlign = 'center';
     ctx.shadowColor = '#ff69b4';
     ctx.shadowBlur = 15;
-    ctx.fillText('♪ Mãi iu bé ♪', centerX, 520);
+    ctx.fillText('♪ Mãi iu BA ♪', centerX, 520);
     
     // Artist
     ctx.fillStyle = '#ffb6c1';
     ctx.font = '32px Georgia';
-    ctx.fillText('💖 My Love 💖', centerX, 570);
+    ctx.fillText('💖 For u 💖', centerX, 570);
     
     // Volume indicator
     ctx.fillStyle = '#ff69b4';
